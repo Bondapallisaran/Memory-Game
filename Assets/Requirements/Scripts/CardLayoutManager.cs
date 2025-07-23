@@ -41,7 +41,7 @@ public class CardLayoutManager : MonoBehaviour
         }
        int totalCards = rows * columns;
        createGridCards.CreateCards(totalCards);
-        gameManager.SetupNewGame(createGridCards.buttons, totalCards);
+       gameManager.SetupNewGame(createGridCards.buttons, totalCards);
     }
 
    // Dynamically adjusts card size and layout to fit rows × columns inside the container and maintains spacing all cards. 

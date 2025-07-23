@@ -1,6 +1,7 @@
 
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
@@ -17,6 +18,14 @@ public class GameManager : MonoBehaviour
     private int gameGuesses;              // Total number of pairs in current game
 
 
+    public TextMeshProUGUI scoreText;
+    public TextMeshProUGUI lastGameScoreText;
+    public TextMeshProUGUI nextLevelText;
+
+    private int score = 0;
+    private int matchPoints = 5;
+    private int misMatchPoints = 2;
+    private int lastGameScore = 0;
     private List<int> flippedIndexes = new List<int>();  // Stores indexes of flipped but unmatched cards
 
     private void Awake()
@@ -26,8 +35,16 @@ public class GameManager : MonoBehaviour
 
     void Start()
     {
+        nextLevelText.enabled = false;
         GetButtons();
         gameGuesses = gamePuzzles.Count / 2;
+
+        if(PlayerPrefs.HasKey("HighScore"))
+        {
+            lastGameScore = PlayerPrefs.GetInt("HighScore");
+            lastGameScoreText.text = "High Score: " + lastGameScore;
+            Debug.Log("Last game score: " + lastGameScore);
+        }
     }
 
     //  Find and store all cards in the scene tagged PuzzleButton.
@@ -55,6 +72,7 @@ public class GameManager : MonoBehaviour
     //If 2 cards are flipped, trigger match-check.
     void PickPuzzle()
     {
+        SoundManager.instance.PlayFlip();
         int index = int.Parse(UnityEngine.EventSystems.EventSystem.current.currentSelectedGameObject.name);
         Button selectedButton = buttons[index];
 
@@ -111,12 +129,15 @@ public class GameManager : MonoBehaviour
         {
             // Matched
             yield return new WaitForSeconds(0.3f);
+            SoundManager.instance.PlayMatch();
             buttons[i1].interactable = false;
             buttons[i2].interactable = false;
 
             buttons[i1].image.color = new Color(0, 0, 0, 0);
             buttons[i2].image.color = new Color(0, 0, 0, 0);
 
+            score += matchPoints;
+            UpdateScoreUI();
             countCorrectGuesses++;
             CheckIfGameIsFinished();
         }
@@ -124,11 +145,14 @@ public class GameManager : MonoBehaviour
         {
             // Not matched – flip back and reset
             yield return new WaitForSeconds(0.3f);
+            SoundManager.instance.PlayMisMatch();
             StartCoroutine(FlipCard(buttons[i1], false));
             StartCoroutine(FlipCard(buttons[i2], false));
             buttons[i1].image.sprite = bgSprite;
             buttons[i2].image.sprite = bgSprite;
 
+            score = Mathf.Max(0,score-misMatchPoints);
+            UpdateScoreUI();
             // Remove from flippedIndexes
             flippedIndexes.Remove(i1);
             flippedIndexes.Remove(i2);
@@ -140,6 +164,9 @@ public class GameManager : MonoBehaviour
     {
         if (countCorrectGuesses == gameGuesses)
         {
+            nextLevelText.enabled = true;
+            nextLevelText.text = "Go to Next Level...";
+            SoundManager.instance.PlayGameOver();
             Debug.Log("Game Finished in " + countGuesses + " guesses");
         }
     }
@@ -147,6 +174,11 @@ public class GameManager : MonoBehaviour
     // Reset game with a new layout of cards (called after dropdown value)
     public void SetupNewGame(List<Button> newButtons, int totalCards)
     {
+        nextLevelText.enabled = false;
+        lastGameScore = score;
+        PlayerPrefs.SetInt("HighScore", lastGameScore);
+        PlayerPrefs.Save();
+
         buttons = newButtons;
         gamePuzzles.Clear();
         AddGamePuzzles(totalCards);
@@ -165,6 +197,9 @@ public class GameManager : MonoBehaviour
         countGuesses = 0;
         countCorrectGuesses = 0;
         gameGuesses = totalCards / 2;
+
+        score = 0;
+        UpdateScoreUI();
     }
 
     // Add paired puzzle sprites into the list (to match).
@@ -188,6 +223,14 @@ public class GameManager : MonoBehaviour
             Sprite temp = list[i];
             list[i] = list[rand];
             list[rand] = temp;
+        }
+    }
+
+    void UpdateScoreUI()
+    {
+        if(scoreText != null)
+        {
+              scoreText.text = "Score: "+score.ToString();          
         }
     }
 }
