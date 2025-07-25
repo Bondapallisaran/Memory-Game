@@ -9,9 +9,6 @@ EditorBuildSettings:
     path: Assets/Requirements/Scenes/New Scene.unity
     guid: 94ac6a6a6bed36245ab1d63693e27c65
   - enabled: 1
-    path: Assets/Scenes/SampleScene.unity
-    guid: 9fc0d4010bbf28b4594072e72b8655ab
-  - enabled: 1
     path: Assets/Requirements/Scenes/MemoryGame.unity
     guid: f1dc71aafbb3182408035bb486b49692
   m_configObjects: {}

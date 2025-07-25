@@ -1,14 +1,6 @@
-using System.Buffers.Text;
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using System.ComponentModel;
-using Unity.VisualScripting;
-using UnityEngine.UIElements;
-
 public class CardLayoutManager : MonoBehaviour
 {
     public Transform cardContainer; // UI container that holds the cards (with GridLayoutGroup)
@@ -20,19 +12,47 @@ public class CardLayoutManager : MonoBehaviour
     public CreateGridCards createGridCards; // Reference to the script that instantiates card buttons
     public GameManager gameManager;         // Reference to the GameManager to initialize game logic
 
-
+    private int lastWidth;
+    private int lastHeight;
+    private int selectedGrid;
+    private int selectedRow;
     // Start is called before the first frame update
     void Start()
     {
+        lastWidth = Screen.width;
+        lastHeight = Screen.height;
+
         layoutDropDown.onValueChanged.AddListener(OnLayoutChanged);
-        OnLayoutChanged(layoutDropDown.value);
+        selectedGrid = layoutDropDown.value;
+        OnLayoutChanged(selectedGrid);
     }
-  //  Based on the dropdown(index), it sets the number of rows and columns.
-  //  Instantiates exactly that many card buttons.
-  //  Then initializes the game logic with these cards.
+
+    void Update()
+    {
+        if (Screen.width != lastWidth || Screen.height != lastHeight)
+        {
+            lastWidth = Screen.width;
+            lastHeight = Screen.height;
+
+            if (Screen.width > Screen.height)
+            {
+                Debug.Log("Switched to Landscape");
+            }                
+            else
+            {
+                Debug.Log("Switched to Portrait");
+            }
+            OnLayoutChanged(selectedGrid);
+        }
+    }
+
+    //  Based on the dropdown(index), it sets the number of rows and columns.
+    //  Instantiates exactly that many card buttons.
+    //  Then initializes the game logic with these cards.
     void OnLayoutChanged(int index)
     {
-        switch(index)
+        selectedGrid = layoutDropDown.value;
+        switch (index)
         {
             case 0: SetGridLayout(2, 2);break;
             case 1: SetGridLayout(2, 3); break;
@@ -52,17 +72,67 @@ public class CardLayoutManager : MonoBehaviour
         GridLayoutGroup grid = cardContainer.GetComponent<GridLayoutGroup>();
         RectTransform containerRect = cardContainer.GetComponent<RectTransform>();
 
+        grid.constraintCount = columns;
+        //Debug.Log($"rows ={r}, columns = {c}"); 
+        
+        float paddingLeft = grid.padding.left;
+        float paddingRight = grid.padding.right;
+        float paddingTop = grid.padding.top;
+        float paddingBottom = grid.padding.bottom;
         float containerWidth = containerRect.rect.width ;
         float containerHeight = containerRect.rect.height ;
 
+        float rValue = 0, cValue = 0;
+
+        if (containerHeight < containerWidth)
+        {
+            rValue = r;
+            cValue = c;
+        }
+        else 
+        {
+            rValue = c;
+            cValue = r;
+        }
+
+        //Debug.Log($"paddingLeft ={paddingLeft}, paddingRight = {paddingRight}, paddingTop = {paddingTop}, paddingBottom = {paddingBottom}, containerWidth = {containerWidth} , containerHeight = {containerHeight} ");
+        
         float spacing = grid.spacing.x;
-        float cellWidth = (containerWidth - (columns - 1) * spacing) / columns;
-        float cellHeight = (containerHeight - (rows - 1) * spacing) / rows;
+        float totalWidthSpacing = paddingLeft + paddingRight + ((cValue - 1) * spacing);    
+        float totalHeightSpacing = paddingTop + paddingBottom + ((rValue - 1) * spacing);
 
-        grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-        grid.constraintCount = columns;
-        grid.cellSize = new Vector2 (cellWidth, cellHeight);
-    }
+        //Debug.Log($"spacing ={spacing}, totalWidthSpacing = {totalWidthSpacing}, totalHeightSpacing = {totalHeightSpacing} ");
 
-  
+
+        float cellWidth = ((containerWidth - totalWidthSpacing))/cValue;
+        float cellHeight = ((containerHeight - totalHeightSpacing)) / rValue;
+
+        //Debug.Log($"cellWidth ={cellWidth}, cellHeight = {cellHeight}");
+
+
+        float actuallCellSize = 0;
+        if (containerHeight < containerWidth)
+        {
+            if (cellHeight < cellWidth) 
+                actuallCellSize = cellHeight;
+            else
+                actuallCellSize = cellWidth;
+            grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+        }
+        else
+        {
+            if (cellWidth < cellHeight )
+                actuallCellSize = cellWidth;
+            else
+                actuallCellSize = cellHeight;
+
+            grid.constraint = GridLayoutGroup.Constraint.FixedRowCount;
+        }
+        
+        //Debug.Log($"actuallCellSize ={actuallCellSize}");
+
+
+        grid.cellSize = new Vector2 (actuallCellSize,actuallCellSize);
+    }  
 }
+

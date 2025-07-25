@@ -30,7 +30,7 @@ public class GameManager : MonoBehaviour
 
     private void Awake()
     {
-        puzzles = Resources.LoadAll<Sprite>("Sprites/Fruits");
+        puzzles = Resources.LoadAll<Sprite>("Sprites/Fruits");     
     }
 
     void Start()
@@ -233,4 +233,6 @@ public class GameManager : MonoBehaviour
               scoreText.text = "Score: "+score.ToString();          
         }
     }
+
+   
 }
